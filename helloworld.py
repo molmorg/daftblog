@@ -29,19 +29,19 @@ class BlogUser(db.Model):
 class Home(webapp.RequestHandler):
         
     def get(self):
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write('Hello, webapp World!')
+        q = Post.all()
+        q.order('-posted_date')
+        posts = q.fetch(top_post_count)
+        viewmodel = { 'posts' : posts }
+        self.response.write(render_template('home.html'), viewmodel)
         
-        
-
 class New(webapp.RequestHandler):
     def get(self):
-    
+        self.response.write(render_template('new.html'), None)
 
-    
-
-
-application = webapp.WSGIApplication([('/', Home)], debug=True)
+application = webapp.WSGIApplication([('/', Home),
+                                      ('/New', New)],
+                                      debug=True)
 
 def render_template(path, model):
     template.render(map_path(path), )
@@ -54,3 +54,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+top_post_count = 20

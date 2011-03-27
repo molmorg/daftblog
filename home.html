@@ -1,0 +1,14 @@
+<html>
+	<head>
+		<title>daftblog</title>
+	</head>
+	<body>
+		<h1>Welcome</h1>
+		{% for post in posts %}
+			<h3><a href="{{link_title}}">{{title}}</a></h3>
+			<div>{{body}}</div>
+			<div>{{posted_date}} - {{user}}</div>
+		{% endfor %}
+		<a href="New">New Post</a>
+	</body>
+</html>
