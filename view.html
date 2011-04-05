@@ -6,5 +6,33 @@
 		<h1>{{post.title}}</h1>
 		<div>{{post.body}}</div>
 		<div>{{post.posted_date}} - {{post.user}}</div>
+		<h3>Comments ({{number_of_comments}})</h3>
+		{% for comment in comments %}
+			<a name="{{comment.key}}" />
+			<div>
+				<a href="{{comment.url}}">{{comment.name}}</a>
+				<div>{{comment.body}}</div>
+				<div>{{comment.posted_date}}</div>
+			</div>
+		{% endfor %}
+		<h4>New Comment</h4>
+		<form method="post">
+			<input type="text" name="name" Value="Name" /><br/>
+			<input type="text" name="body" Value="Your comment" /><br/>
+			<input type="text" name="url" Value="URL" /><br/>
+			<input type="text" name="email" Value="EMail" /><br/>
+			 <script type="text/javascript"
+		       src="http://www.google.com/recaptcha/api/challenge?k=6LdwKcMSAAAAAB5ZxdcHHxbY_-mGV3mGi4EccpNL">
+		    </script>
+		    <noscript>
+		       <iframe src="http://www.google.com/recaptcha/api/noscript?k=6LdwKcMSAAAAAB5ZxdcHHxbY_-mGV3mGi4EccpNL"
+		           height="300" width="500" frameborder="0"></iframe><br>
+		       <textarea name="recaptcha_challenge_field" rows="3" cols="40">
+		       </textarea>
+		       <input type="hidden" name="recaptcha_response_field"
+		           value="manual_challenge">
+		    </noscript>
+			<input type="submit" />
+		</form>
 	</body>
 </html>

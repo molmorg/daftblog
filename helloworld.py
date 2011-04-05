@@ -1,10 +1,17 @@
-import os
-import logging
+from google.appengine.dist import use_library
+use_library('django', '1.2')
 
-from google.appengine.ext.webapp import template
+import os
+import cgi
+import logging
+import datetime
+import urllib
+
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.api import users
+from google.appengine.api import urlfetch
+from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Post(db.Model):
@@ -16,24 +23,28 @@ class Post(db.Model):
     is_published = db.BooleanProperty(required=True, default=True)
     publish_date = db.DateTimeProperty(required=True, auto_now_add=True)
     user = db.UserProperty(required=True)
+    enable_comments = db.BooleanProperty(required=True, default=True)
     
 class Comment(db.Model):
     post = db.ReferenceProperty(required=True)
     name = db.StringProperty(required=True)
-    comment = db.StringProperty(required=True, multiline=True)
+    email = db.EmailProperty(required=False)
+    url = db.URLProperty(required=False)
+    body = db.StringProperty(required=True, multiline=True)
     ip_address = db.StringProperty(required=True)
     posted_date = db.DateTimeProperty(required=True, auto_now_add=True)
+    moderated = db.BooleanProperty(required=True, default=False)
+    validated = db.BooleanProperty(required=True, default=True)
     
 class BlogUser(db.Model):
     user = db.UserProperty(required=True)
     display_name = db.StringProperty(required=True)
+    role = db.StringProperty(required=True)
 
 class Home(webapp.RequestHandler):
         
     def get(self):
-        logging.info('home/get')
-        q = Post.all()
-        q.order('-posted_date')
+        q = top_posts_query()
         posts = q.fetch(top_post_count)
         viewmodel = { 'posts' : posts }
         self.response.out.write(render_template('home.html', viewmodel))
@@ -58,20 +69,45 @@ class New(webapp.RequestHandler):
 class View(webapp.RequestHandler):
     def get (self, link_title):
         
-        q = Post.all()
-        q.filter('link_title =', link_title)
-        posts = q.fetch(1)
-        if (len(posts) < 1):
+        post = get_post_by_link_title(link_title)
+        
+        if post == None:
             self.response.set_status(404)
             self.response.out.write('No post with title ' + link_title)
             return
-        viewmodel = {'post':posts[0]}
-        logging.info(link_title)
-        for post in posts:
-            logging.info(post.title)
-    
+        
+        comments = Comment.all()
+        comments.filter('validated =', True)
+        comments.filter('post =', post)
+        comments.order('-posted_date')
+        
+        viewmodel = {'post':post, 'comments':comments}    
         
         self.response.out.write(render_template('view.html', viewmodel ))
+
+    def post (self, link_title):
+        url = 'http://www.google.com/recaptcha/api/verify'
+        form_data = urllib.urlencode(
+             {
+                'privatekey' : '6LdwKcMSAAAAAH59DAAGottMXK7ih7w5rX3e-QAP',
+                'remoteip' : self.request.remote_addr,
+                'challenge' : self.request.get('recaptcha_challenge_field'),
+                'response' : self.request.get('recaptcha_response_field')
+              })
+        
+        result = urlfetch(url=url,
+                          payload=form_data,
+                          method = urlfetch.POST)
+        comment = Comment(
+                          post = get_post_by_link_title(link_title),
+                          name = self.request.get('name'),
+                          url = self.request.get('url'),
+                          email = self.request.get('email'),
+                          body = self.request.get('body'),
+                          ip_address = self.request.remote_addr)
+        comment.put()
+        
+        self.redirect(self.request.uri)
         
 class RedirectToView(webapp.RequestHandler):
     def get(self, link_title):
@@ -84,6 +120,14 @@ application = webapp.WSGIApplication([('/', Home),
                                       debug=True)
 
 top_post_count = 20
+
+def top_posts_query():
+        q = Post.all()
+        q.filter('publish_date <=', datetime.datetime.now())
+        q.filter('is_published =', True)
+        q.order('-publish_date')
+        return q
+        
 
 def check_login(self):
     if (users.is_current_user_admin() == False):
@@ -99,9 +143,19 @@ def std_model(self):
     return {
             'login_url': users.create_login_url(self.request.uri),
             'logout_url': users.create_logout_url(self.request.uri),
-            'user' : users.get_current_user()
+            'user' : users.get_current_user(),
+            'role' : 'TBC'
             }
     
+    
+def get_post_by_link_title(link_title):
+    q = Post.all()
+    q.filter('link_title =', link_title)
+    posts = q.fetch(1)
+    if (len(posts) < 1):
+        return None
+    
+    return posts[0]
 
 def render_template(path, model):
     return template.render(map_path(path), model)
