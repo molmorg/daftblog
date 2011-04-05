@@ -95,9 +95,16 @@ class View(webapp.RequestHandler):
                 'response' : self.request.get('recaptcha_response_field')
               })
         
-        result = urlfetch(url=url,
+        result = urlfetch.fetch(url=url,
                           payload=form_data,
                           method = urlfetch.POST)
+        
+        logging.info(result.content)
+        if (result.content[0:4] != 'true'):
+            self.response.set_status(400)
+            self.response.out.write('Invalid captcha, go back - please try again.')
+            return
+        
         comment = Comment(
                           post = get_post_by_link_title(link_title),
                           name = self.request.get('name'),
