@@ -1,0 +1,190 @@
+body, table
+{
+	font-family: verdana, arial;
+	font-size:9pt;
+}
+
+h3
+{
+	font-size:9pt;
+	font-weight: bold;
+}
+
+h4
+{
+	font-weight: bold;
+	font-size:8pt;
+}
+	
+.small
+{
+	font-size:7.5pt;
+	vertical-align: top;
+}
+
+.callout
+{
+	margin: 20px;
+	padding: 10px;
+	background-color: #ADCAFF
+}
+
+.main
+{
+	position:absolute;
+	left:-294px;
+	margin-left:50%;
+	top:20px
+}
+
+.mainCenter
+{
+	width:588px;
+	background-image:url('images/backgrounds/centre.jpg')
+}
+
+.mainTop
+{
+	background-image:url('images/backgrounds/top.gif');
+	background-repeat:no-repeat;
+	background-position:top
+}
+
+
+.mainBottom
+{
+	background-image:url('images/backgrounds/bottom.jpg');
+	background-repeat:no-repeat;
+	background-position:bottom;
+}
+
+.mainContent
+{
+	padding-left:40px;
+	padding-top:30px;
+	padding-right:70px;
+	padding-bottom:60px;
+}
+
+.mainTrail
+{
+	padding-top:100px;
+	margin-left:40px; 
+	margin-right:40px;
+	padding-bottom:3px;
+	border-bottom:1px solid #ADCAFF
+}
+
+.column
+{
+	position:absolute;
+	left:227px;
+	margin-left:50%;
+	top:80px;
+}
+
+.columnCenter
+{
+	width:194px;
+	background-image:url('images/backgrounds/little-centre.gif');
+}
+
+.columnTop
+{
+	background-image:url('images/backgrounds/little-top.gif');
+	background-repeat:no-repeat;
+	background-position:top
+}
+
+.columnBottom
+{
+	background-image:url('images/backgrounds/little-bottom.gif');
+	background-repeat:no-repeat;
+	background-position:bottom;
+}
+
+.columnContent
+{
+	padding:10px;
+}
+
+.copyright
+{
+	padding-top:10px;
+	font-size: xx-small;
+	color: Gray;
+}
+
+.wideControl
+{
+	width: 470px;
+}
+
+.postTitle
+{
+	font-weight: bold;
+	text-decoration: underlined;
+}
+
+.postSection
+{
+	clear:both;
+}
+
+.postedBySection
+{
+	margin-bottom: 30px;
+}
+
+.commentLink
+{
+	clear:both;
+	font-size:9pt;
+}
+
+.bottomLine
+{
+	border-bottom:1px solid #ADCAFF;
+}
+
+.code
+{
+	font-family: Courier, Courier New, Lucida Console;
+	padding-left: 20px; 
+}
+
+.quote
+{
+	font-style:oblique;
+	padding-left:10px;
+	padding-right:5px;
+}
+
+@media print
+{
+	.main
+	{
+		left:0;
+		margin: 0;
+		position:relative;
+	}
+	
+	.mainCenter
+	{
+		width:100%;
+	}
+	
+	.mainTop, .mainContent, .mainBottom, .mainContent, .mainTrail
+	{
+		padding:0;
+		margin:0;
+	}
+	
+	.column, .columnTop, .ColumnCenter, .columnBottom, .columnContent
+	{
+		display:none;
+	}
+}
+
+
+

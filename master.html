@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+	<head>
+		<title>TheJoyOfCode.com</title>
+		<meta name="description" content="the Joy of Code" />
+		<meta name="keywords" content=".NET development, Web Services, C#, Xml, User Interface, Josh Twist, Thomas Bruusgaard" />
+		<link href="static/StyleSheet.css" type="text/css" rel="stylesheet" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="http://feeds.feedburner.com/thejoyofcode/" />
+		<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.5.2.min.js" />
+		<script type="text/javascript" >
+		$(document).ready(function(){});
+		</script>
+	</head>
+	<body>
+		<div class="main">
+	         <div class="mainCenter">
+	             <div class="mainBottom">
+	                 <div class="mainTop">
+	                     <div class="mainTrail">
+	                       <!--  breadcrumbs -->  
+	                       <a href="/" title="Home">Home</a>
+	                       {% block crumbs %}{% endblock %} 
+	                      </div>
+	                 	<div class="mainContent">
+	            			 <!-- body -->
+	            			 {% block content %}{% endblock %}
+	                 	</div>
+			    <div class="copyright">
+	                     	&copy; 2005 - 2011 Josh Twist - All Rights Reserved.
+	                    	</div>
+	
+	                 </div>
+	            </div>
+	        </div>
+        
+	        <div class="column">
+	            <div class="columnCenter">
+	                <div class="columnTop">
+	                    <div class="columnBottom">
+	                        <div class="columnContent">
+	                        	<b>Welcome</b>
+	                            <ul>
+	                               <li><a href="About_us">About us</a></li>
+	                               <li><a href="Contact_us">Contact us</a></li>
+	                               <li><a href="Search">Search</a></li>
+	                            </ul>
+	
+	                            <p />
+	                            <b>Feeds</b>
+	                            <ul>
+									<li><a href="http://feeds.feedburner.com/thejoyofcode/">RSS</a></li>
+								</ul>
+	
+	                            <p />
+	
+	                            <b>Archive</b>
+		                        <ul>
+									<li><a href="/Archive.aspx?month=4&amp;year=2011">Apr 2011 (0 posts)</a></li><li><a href="/Archive.aspx?month=3&amp;year=2011">Mar 2011 (0 posts)</a></li><li><a href="/Archive.aspx?month=2&amp;year=2011">Feb 2011 (0 posts)</a></li><li><a href="/Summary.aspx">All Posts &amp; Tags</a></li>
+								</ul>
+	                
+	                            <p />
+	                           
+		                        <b>Editors</b>
+	 							{% if blog_model.current_blog_user != None %}
+		                            <ul>
+		                            	<li><a href="{{ blog_model.logout_url }}">Logout</a></li>
+		                                <li><a href="new">New Post</a></li>
+		                                <li><a href="uploadFile">Upload Files</a></li>
+		                                <li><a href="viewComments">View Comments</a></li>
+									</ul>
+                            	{% else %}
+	                            	<ul>
+		                            	<li><a href="{{ blog_model.login_url }}">Login</a></li>
+									</ul>
+                            	{% endif %}
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+	</body>
+</html>

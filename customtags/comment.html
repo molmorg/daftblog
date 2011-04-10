@@ -1,0 +1,29 @@
+			{% if blog_model.current_blog_user != None or comment.validated %}	
+		    	{% if not comment.moderated %}
+		    		<div style="background-color:orange; padding:5px" >
+		    	{% endif %}
+		    	{% if not comment.validated and comment.moderated %}
+		    		<div style="background-color:lightgrey; padding:5px">
+		    	{% endif %}
+					<a name="{{comment.key}}" />
+					<strong>Posted by <a href="{{comment.url}}">{{comment.name}}</a>
+					@ {{ comment.posted_date }} {{ comment.posted_date }}
+					{% if blog_model.current_blog_user != None %}
+						<br />
+						<span style="font-size:8pt">
+							[Email: <a href="mailto:{{ comment.email }}">{{ comment.email }}</a>]
+							[<a class="deleteCommentLink" href="/{{ post.link_title }}/Comments/{{ comment.key }}/delete">Delete</a>]
+							[Validated: {{ comment.validated }}]
+							[Moderated: {{ comment.moderated }} 
+							<a href="/moderateComment/{{comment.key}}/true()">Approve</a> |
+							<a href="/moderateComment/{{comment.key}}/false()">Reject</a>]
+						</span>
+					{% endif %}
+					</strong>
+					<br/>
+					<div>{{comment.body}}</div>
+					<p />
+				{% if not comment.validated or not comment.moderated %}
+	    			</div>
+	    		{% endif %}
+			{% endif %}

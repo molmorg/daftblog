@@ -1,3 +1,26 @@
-		<h3><a href="{{post.link_title}}">{{post.title}}</a></h3>
-		<div>{{post.body}}</div>
-		<div>{{post.posted_date}} - {{post.user}}</div>
+	<div class="postSection">
+		<a href="{{post.link_title}}" class="postTitle">{{post.title}}</a><br/>
+		<p />
+		{{post.body}}
+		<p />
+		<p><strong>Tags:</strong> TODO TODO </p>
+	</div>
+	<div class="postedBySection">
+		<img src="/uploads/{{ blog_user.image_url}}" alt="{{blog_user.long_name}}" 
+			 style="border-width:0px; float: left; margin-right: 5px;" />
+	    <a href="{{ blog_user.bio_url }}">{{blog_user.display_name}}</a><br />
+	    <div>
+	    	<img src="/uploads/twitter.png" style="margin:3px; vertical-align:middle" border="0" alt="Follow me on Twitter" />
+	    	<a href="http://twitter.com/{{ blog_user.twitter_handle }}" style="vertical-align:middle">Follow me</a>
+	    </div>
+	    
+	    <span>{{ post.publish_date }}</span>
+		
+		{% if blog_model.is_admin %}
+		<div style="clear: both; text-align: center">
+	        <p />
+	        <b>Administration:</b>
+	        <a href="/Edit/{{ post.link_title }}">Edit Post</a>
+	    </div>
+	    {% endif %}
+	</div>

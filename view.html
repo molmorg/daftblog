@@ -1,26 +1,49 @@
-<html>
-	<head>
-		<title>{{post.title}}</title>
-	</head>
-	<body>
+{% extends 'master.html' %}
+
+{% block crumbs %}
+> {{ post.title }}
+{% endblock %}
+
+{% block content %}
 		{% render_post post %}
+		
+	    <p> TODO - next/previous area </p>
+	    {% if blog_model.current_blog_user != None %}
+			<script type="text/javascript">
+				$(document).ready(function() {
+					  $(".deleteCommentLink").click(function(event) {
+					    	if (!confirm("Are you sure you want to delete this comment?"))
+					  		{
+						   		event.preventDefault();
+						   	}
+					  });
+				 });
+			</script>
+		{% endif %}
+	    
 		<h3>Comments ({{number_of_comments}})</h3>
 		{% for comment in comments %}
-			<a name="{{comment.key}}" />
-			<div>
-				<a href="{{comment.url}}">{{comment.name}}</a>
-				<div>{{comment.body}}</div>
-				<div>{{comment.posted_date}}</div>
-			</div>
+		    {% render_comment comment post blog_model %}
 		{% endfor %}
 		{% if post.enable_comments %}
-		<h4>New Comment</h4>
+		
+		<h3>Post a comment:</h3>
 		<form method="post">
-			<input type="text" name="name" Value="Name" /><br/>
-			<input type="text" name="body" Value="Your comment" /><br/>
-			<input type="text" name="url" Value="URL" /><br/>
-			<input type="text" name="email" Value="EMail" /><br/>
-			 <script type="text/javascript"
+			<p>
+				Name
+				<input type="text" name="name" Value="" maxlength="100" class="wideControl"/>
+			</p>
+			<p>
+				E-mail (never shared)
+				<input type="text" name="email" Value="" maxlength="250" class="wideControl"/>
+			<p>
+				URL
+				<input type="text" name="url" Value="" maxlength="500" class="wideControl"/>
+			<p>
+				Comments
+				<textarea name="body" rows="2" cols="20" class="wideControl" style="height:120px;"></textarea>
+			</p>
+			<script type="text/javascript"
 		       src="http://www.google.com/recaptcha/api/challenge?k=6LdwKcMSAAAAAB5ZxdcHHxbY_-mGV3mGi4EccpNL">
 		    </script>
 		    <noscript>
@@ -34,5 +57,4 @@
 			<input type="submit" />
 		</form>
 		{% endif %}
-	</body>
-</html>
+{% endblock %}

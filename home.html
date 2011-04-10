@@ -1,12 +1,7 @@
-<html>
-	<head>
-		<title>daftblog</title>
-	</head>
-	<body>
-		<h1>Welcome</h1>
+{% extends 'master.html' %}
+
+{% block content %}
 		{% for post in posts %}
 			{% render_post post %}
 		{% endfor %}
-		<a href="New">New Post</a>
-	</body>
-</html>
+{% endblock %}

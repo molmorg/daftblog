@@ -15,6 +15,7 @@ from google.appengine.api import users
 from google.appengine.api import urlfetch
 from google.appengine.api import mail
 from google.appengine.api import xmpp
+from google.appengine.api import memcache
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 
@@ -44,15 +45,17 @@ class Comment(db.Model):
     
 class BlogUser(db.Model):
     user = db.UserProperty(required=True)
-    display_name = db.StringProperty(required=True)
-    role = db.StringProperty(required=True)    
+    short_name = db.StringProperty(required=True)
+    long_name = db.StringProperty(required=True)
+    twitter_handle = db.StringProperty()
+    bio_url = db.StringProperty()
+    image_url = db.StringProperty()
 
 class Home(webapp.RequestHandler):
         
     def get(self):
-        q = top_posts_query()
-        posts = q.fetch(top_post_count)
-        viewmodel = { 'posts' : posts }
+        posts = get_top_posts()
+        viewmodel = { 'posts' : posts, 'blog_model' : get_blog_model(self) }
         self.response.out.write(render_template('home.html', viewmodel))
         
 class New(webapp.RequestHandler):
@@ -83,11 +86,10 @@ class View(webapp.RequestHandler):
             return
         
         comments = Comment.all()
-        comments.filter('validated =', True)
         comments.filter('post =', post)
         comments.order('-posted_date')
         
-        viewmodel = {'post':post, 'comments':comments}    
+        viewmodel = {'post':post, 'comments':comments, 'blog_model' : get_blog_model(self) }    
         
         self.response.out.write(render_template('view.html', viewmodel ))
 
@@ -134,7 +136,7 @@ class View(webapp.RequestHandler):
         logging.info(mail_body)
         
         mail.send_mail(sender="daftblob.com <admin@daftblog.com>",
-                       to="admin@molmorg.com",
+                       to="admin@nowhere.com",
                        subject="New Comment on %s" %post.title,
                        body= mail_body)
         
@@ -149,7 +151,7 @@ class ModerateComment(webapp.RequestHandler):
         
         comment = db.get(commentKey)
         comment.moderated = True
-        comment.validated = validate == 'true()'
+        comment.validated = validate[0:4] == 'true'
         comment.put()
         
         post = comment.post
@@ -182,32 +184,45 @@ class ServeBlob(blobstore_handlers.BlobstoreDownloadHandler):
             return
         
         self.send_blob(blob_infos[0])
+        
+class DeleteComment(webapp.RequestHandler):
+    def get(self, link_title, comment_key):
+        if (check_login(self) == False):
+            return
+        db.delete(comment_key)
+        self.redirect('/%s' %link_title)
    
 class RedirectToView(webapp.RequestHandler):
     def get(self, link_title):
         self.redirect("/" + link_title, True)
 
 application = webapp.WSGIApplication([('/', Home),
-                                      ('/New', New),
+                                      ('/new', New),
                                       ('/uploadFile', UploadFile),
                                       ('/upload', UploadBlob),
+                                      ('/([^/]+)/Comments/([^/]+)/delete', DeleteComment),
                                       ('/moderateComment/([^/]+)/(.*)', ModerateComment),
                                       ('/uploads/(.*)', ServeBlob),
-                                      ('/(.*).aspx', RedirectToView),
-                                      ('/(.*)', View)],
+                                      ('/([^/]+).aspx', RedirectToView),
+                                      ('/([^/]+)', View)],
                                       debug=True)
 
 top_post_count = 20
 
-def top_posts_query():
+def get_top_posts():
+    memkey = "TOP_POSTS"
+    posts = memcache.get(memkey)
+    if (posts is None):
         q = Post.all()
         q.filter('publish_date <=', datetime.datetime.now())
         q.filter('is_published =', True)
         q.order('-publish_date')
-        return q
+        posts = q.fetch(top_post_count)
+        memcache.add(memkey, posts)
+    return posts
 
 def check_login(self):
-    if (users.is_current_user_admin() == False):
+    if (get_current_blog_user() == None):
         login_url = users.create_login_url(self.request.uri)
         self.response.set_status(401)
         self.response.out.write('You must be <a href="' + login_url + '">logged in</a> as admin')
@@ -215,22 +230,45 @@ def check_login(self):
     else:
         return True
 
-def std_model(self):
+def get_blog_model(self):
 # TODO - need to cache some of these pieces.
     return {
             'login_url': users.create_login_url(self.request.uri),
             'logout_url': users.create_logout_url(self.request.uri),
-            'user' : users.get_current_user(),
+            'current_blog_user' : get_current_blog_user(),
+            'is_admin': users.is_current_user_admin(),
             'role' : 'TBC'
             }
     
-    
+def get_current_blog_user():
+    current_user = users.get_current_user()
+    blog_users = BlogUser.all().filter("user =", current_user).fetch(1, 0)
+    if (len(blog_users) >= 1):
+        return blog_users[0]
+    else:
+        if (users.is_current_user_admin() == False):
+            return None
+        else:
+            new = BlogUser(
+                           user = current_user,
+                           long_name = current_user.user_id(),
+                           short_name = current_user.nickname(),
+                           )
+            new.put()
+            return new   
+
 def get_post_by_link_title(link_title):
-    q = Post.all()
-    q.filter('link_title =', link_title)
-    posts = q.fetch(1)
-    if (len(posts) < 1):
-        return None
+    memkey = "POST_%s" %link_title
+    post = memcache.get(memkey)
+    if (post is None):
+        q = Post.all()
+        q.filter('link_title =', link_title)
+        posts = q.fetch(1)
+        if (len(posts) == 1):
+            post = posts[0]
+            memcache.add(memkey, post)
+    return post
+            
     
     return posts[0]
 
