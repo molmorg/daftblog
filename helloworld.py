@@ -1,5 +1,7 @@
 from google.appengine.dist import use_library
 use_library('django', '1.2')
+from google.appengine.ext.webapp import template
+template.register_template_library('customtags.custom_tags')
 
 import os
 import cgi
@@ -11,7 +13,11 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.api import users
 from google.appengine.api import urlfetch
-from google.appengine.ext.webapp import template
+from google.appengine.api import mail
+from google.appengine.api import xmpp
+from google.appengine.ext import blobstore
+from google.appengine.ext.webapp import blobstore_handlers
+
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Post(db.Model):
@@ -34,12 +40,12 @@ class Comment(db.Model):
     ip_address = db.StringProperty(required=True)
     posted_date = db.DateTimeProperty(required=True, auto_now_add=True)
     moderated = db.BooleanProperty(required=True, default=False)
-    validated = db.BooleanProperty(required=True, default=True)
+    validated = db.BooleanProperty(required=True, default=False)
     
 class BlogUser(db.Model):
     user = db.UserProperty(required=True)
     display_name = db.StringProperty(required=True)
-    role = db.StringProperty(required=True)
+    role = db.StringProperty(required=True)    
 
 class Home(webapp.RequestHandler):
         
@@ -105,8 +111,10 @@ class View(webapp.RequestHandler):
             self.response.out.write('Invalid captcha, go back - please try again.')
             return
         
+        post = get_post_by_link_title(link_title)
+        
         comment = Comment(
-                          post = get_post_by_link_title(link_title),
+                          post = post,
                           name = self.request.get('name'),
                           url = self.request.get('url'),
                           email = self.request.get('email'),
@@ -114,14 +122,77 @@ class View(webapp.RequestHandler):
                           ip_address = self.request.remote_addr)
         comment.put()
         
-        self.redirect(self.request.uri)
+        mail_view_model = {
+                           'post' : post,
+                           'comment' : comment,
+                           'post_url' : self.request.url,
+                           'host_url' : self.request.host_url,
+                           }
         
+        mail_body = render_template('commentMail.html', mail_view_model)
+        
+        logging.info(mail_body)
+        
+        mail.send_mail(sender="daftblob.com <admin@daftblog.com>",
+                       to="admin@molmorg.com",
+                       subject="New Comment on %s" %post.title,
+                       body= mail_body)
+        
+        #TODO - provide a notification to the poster that his comment has been received
+        #and should appear soon. Hide the comment form too. Consider using AJAX for this.
+        self.redirect(self.request.url)
+        
+class ModerateComment(webapp.RequestHandler):
+    def get(self, commentKey, validate):
+        if (check_login(self) == False):
+            return
+        
+        comment = db.get(commentKey)
+        comment.moderated = True
+        comment.validated = validate == 'true()'
+        comment.put()
+        
+        post = comment.post
+        #TODO - make the comment reveal!
+        self.redirect('/{0}?revealComment={1}'.format(post.link_title, comment.key()), False)
+        
+class UploadFile(webapp.RequestHandler):
+    def get(self):
+        if (check_login(self) == False):
+            return
+        upload_url = blobstore.create_upload_url('/upload')
+        self.response.out.write(render_template('upload.html', {'upload_url' : upload_url}))
+        
+class UploadBlob(blobstore_handlers.BlobstoreUploadHandler):
+    def post(self):
+        if (check_login(self) == False):
+            return
+        upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
+        blob_info = upload_files[0]
+        self.redirect('/uploads/%s' % blob_info.filename)
+
+class ServeBlob(blobstore_handlers.BlobstoreDownloadHandler):
+    def get(self, resource):
+        query = "WHERE filename='%s'" % resource
+        logging.info(query)
+        blob_infos = blobstore.BlobInfo.gql(query).fetch(1,0)
+        if (len(blob_infos) == 0):
+            self.response.set_status(404)
+            self.response.out.write('No such resource found: %s' % resource)
+            return
+        
+        self.send_blob(blob_infos[0])
+   
 class RedirectToView(webapp.RequestHandler):
     def get(self, link_title):
         self.redirect("/" + link_title, True)
 
 application = webapp.WSGIApplication([('/', Home),
                                       ('/New', New),
+                                      ('/uploadFile', UploadFile),
+                                      ('/upload', UploadBlob),
+                                      ('/moderateComment/([^/]+)/(.*)', ModerateComment),
+                                      ('/uploads/(.*)', ServeBlob),
                                       ('/(.*).aspx', RedirectToView),
                                       ('/(.*)', View)],
                                       debug=True)
@@ -134,7 +205,6 @@ def top_posts_query():
         q.filter('is_published =', True)
         q.order('-publish_date')
         return q
-        
 
 def check_login(self):
     if (users.is_current_user_admin() == False):

@@ -3,9 +3,7 @@
 		<title>{{post.title}}</title>
 	</head>
 	<body>
-		<h1>{{post.title}}</h1>
-		<div>{{post.body}}</div>
-		<div>{{post.posted_date}} - {{post.user}}</div>
+		{% render_post post %}
 		<h3>Comments ({{number_of_comments}})</h3>
 		{% for comment in comments %}
 			<a name="{{comment.key}}" />
@@ -15,6 +13,7 @@
 				<div>{{comment.posted_date}}</div>
 			</div>
 		{% endfor %}
+		{% if post.enable_comments %}
 		<h4>New Comment</h4>
 		<form method="post">
 			<input type="text" name="name" Value="Name" /><br/>
@@ -34,5 +33,6 @@
 		    </noscript>
 			<input type="submit" />
 		</form>
+		{% endif %}
 	</body>
 </html>

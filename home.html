@@ -5,9 +5,7 @@
 	<body>
 		<h1>Welcome</h1>
 		{% for post in posts %}
-			<h3><a href="{{post.link_title}}">{{post.title}}</a></h3>
-			<div>{{post.body}}</div>
-			<div>{{post.posted_date}} - {{post.user}}</div>
+			{% render_post post %}
 		{% endfor %}
 		<a href="New">New Post</a>
 	</body>
