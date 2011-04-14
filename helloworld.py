@@ -50,36 +50,71 @@ class BlogUser(db.Model):
     twitter_handle = db.StringProperty()
     bio_url = db.StringProperty()
     image_url = db.StringProperty()
+    
+def get_current_blog_user():
+    current_user = users.get_current_user()
+    blog_users = BlogUser.all().filter("user =", current_user).fetch(1, 0)
+    if (len(blog_users) >= 1):
+        return blog_users[0]
+    else:
+        if (users.is_current_user_admin() == False):
+            return None
+        else:
+            new = BlogUser(
+                           user = current_user,
+                           long_name = current_user.user_id(),
+                           short_name = current_user.nickname(),
+                           )
+            new.put()
+            return new   
+    
+def reject_no_login(target):
+    def wrapper(*kwargs):
+        if (get_current_blog_user() == None):
+            login_url = users.create_login_url(self.request.uri)
+            self.response.set_status(401)
+            self.response.out.write('You must be <a href="' + login_url + '">logged in</a> as admin')
+            return
+        else:
+            target(*kwargs)
+    return wrapper  
 
 class Home(webapp.RequestHandler):
-        
     def get(self):
         posts = get_top_posts()
         viewmodel = { 'posts' : posts, 'blog_model' : get_blog_model(self) }
         self.response.out.write(render_template('home.html', viewmodel))
         
 class New(webapp.RequestHandler):
+    @reject_no_login
     def get(self):
-        if check_login(self) == False:
-            return
-        self.response.out.write(render_template('new.html', None))
-        
+        self.response.out.write(render_template('new.html', { 'post': None, 'blog_model' : get_blog_model(self) } ))
+    
+    @reject_no_login
     def post(self):
-        if check_login(self) == False:
-            return
         post = Post(
                     title = self.request.get('title'),
                     link_title = self.request.get('link_title'),
                     body = self.request.get('body'),
                     user = users.get_current_user())
         post.put()
+        memcache.delete(top_posts_count)
+        memcache.add("POST_%s" %link_title, post)
         self.redirect('/')
         
+class Edit(webapp.RequestHandler):
+    @reject_no_login
+    def get(self, link_title):
+        post = get_post_by_link_title(link_title)
+        if post == None:
+            self.redirect('/' + link_title);
+            return
+        
+        self.response.out.write(render_template('new.html', { 'post': post, 'blog_model': get_blog_model(self) }))
+            
 class View(webapp.RequestHandler):
     def get (self, link_title):
-        
         post = get_post_by_link_title(link_title)
-        
         if post == None:
             self.response.set_status(404)
             self.response.out.write('No post with title ' + link_title)
@@ -107,7 +142,6 @@ class View(webapp.RequestHandler):
                           payload=form_data,
                           method = urlfetch.POST)
         
-        logging.info(result.content)
         if (result.content[0:4] != 'true'):
             self.response.set_status(400)
             self.response.out.write('Invalid captcha, go back - please try again.')
@@ -142,12 +176,11 @@ class View(webapp.RequestHandler):
         
         #TODO - provide a notification to the poster that his comment has been received
         #and should appear soon. Hide the comment form too. Consider using AJAX for this.
-        self.redirect(self.request.url)
+        self.redirect('{0}#{1}'.format(self.request.url, comment.key()))
         
 class ModerateComment(webapp.RequestHandler):
+    @reject_no_login
     def get(self, commentKey, validate):
-        if (check_login(self) == False):
-            return
         
         comment = db.get(commentKey)
         comment.moderated = True
@@ -159,16 +192,14 @@ class ModerateComment(webapp.RequestHandler):
         self.redirect('/{0}?revealComment={1}'.format(post.link_title, comment.key()), False)
         
 class UploadFile(webapp.RequestHandler):
+    @reject_no_login
     def get(self):
-        if (check_login(self) == False):
-            return
         upload_url = blobstore.create_upload_url('/upload')
         self.response.out.write(render_template('upload.html', {'upload_url' : upload_url}))
         
 class UploadBlob(blobstore_handlers.BlobstoreUploadHandler):
+    @reject_no_login
     def post(self):
-        if (check_login(self) == False):
-            return
         upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
         blob_info = upload_files[0]
         self.redirect('/uploads/%s' % blob_info.filename)
@@ -176,7 +207,6 @@ class UploadBlob(blobstore_handlers.BlobstoreUploadHandler):
 class ServeBlob(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self, resource):
         query = "WHERE filename='%s'" % resource
-        logging.info(query)
         blob_infos = blobstore.BlobInfo.gql(query).fetch(1,0)
         if (len(blob_infos) == 0):
             self.response.set_status(404)
@@ -186,15 +216,20 @@ class ServeBlob(blobstore_handlers.BlobstoreDownloadHandler):
         self.send_blob(blob_infos[0])
         
 class DeleteComment(webapp.RequestHandler):
+    @reject_no_login
     def get(self, link_title, comment_key):
-        if (check_login(self) == False):
-            return
         db.delete(comment_key)
         self.redirect('/%s' %link_title)
    
 class RedirectToView(webapp.RequestHandler):
     def get(self, link_title):
         self.redirect("/" + link_title, True)
+
+class PostFeed(webapp.RequestHandler):
+    def get(self):
+        posts = get_top_posts()
+        self.response.out.write(render_template('feed.html', { 'posts' : posts, 'base_url' : '%s/' %  self.request.host_url  }))
+    
 
 application = webapp.WSGIApplication([('/', Home),
                                       ('/new', New),
@@ -203,43 +238,28 @@ application = webapp.WSGIApplication([('/', Home),
                                       ('/([^/]+)/Comments/([^/]+)/delete', DeleteComment),
                                       ('/moderateComment/([^/]+)/(.*)', ModerateComment),
                                       ('/uploads/(.*)', ServeBlob),
+                                      ('/feed', PostFeed),
+                                      ('/Edit/([^/]+)', Edit),
                                       ('/([^/]+).aspx', RedirectToView),
                                       ('/([^/]+)', View)],
                                       debug=True)
 
 top_post_count = 20
+top_posts_key = "TOP_POSTS"
 
 def get_top_posts():
-    memkey = "TOP_POSTS"
-    posts = memcache.get(memkey)
+# TODO - remove no cahce
+#    posts = memcache.get(top_posts_key)
+    posts = None
     if (posts is None):
         q = Post.all()
         q.filter('publish_date <=', datetime.datetime.now())
         q.filter('is_published =', True)
         q.order('-publish_date')
         posts = q.fetch(top_post_count)
-        memcache.add(memkey, posts)
+        memcache.add(top_posts_key, posts)
     return posts
 
-def check_login(self):
-    if (get_current_blog_user() == None):
-        login_url = users.create_login_url(self.request.uri)
-        self.response.set_status(401)
-        self.response.out.write('You must be <a href="' + login_url + '">logged in</a> as admin')
-        return False
-    else:
-        return True
-
-def get_blog_model(self):
-# TODO - need to cache some of these pieces.
-    return {
-            'login_url': users.create_login_url(self.request.uri),
-            'logout_url': users.create_logout_url(self.request.uri),
-            'current_blog_user' : get_current_blog_user(),
-            'is_admin': users.is_current_user_admin(),
-            'role' : 'TBC'
-            }
-    
 def get_current_blog_user():
     current_user = users.get_current_user()
     blog_users = BlogUser.all().filter("user =", current_user).fetch(1, 0)
@@ -256,6 +276,26 @@ def get_current_blog_user():
                            )
             new.put()
             return new   
+    
+def reject_no_login(target):
+    def wrapper(*kwargs):
+        if (get_current_blog_user() == None):
+            login_url = users.create_login_url(self.request.uri)
+            self.response.set_status(401)
+            self.response.out.write('You must be <a href="' + login_url + '">logged in</a> as admin')
+            return
+        else:
+            target(*kwargs)
+
+def get_blog_model(self):
+# TODO - need to cache some of these pieces.
+    return {
+            'login_url': users.create_login_url(self.request.uri),
+            'logout_url': users.create_logout_url(self.request.uri),
+            'current_blog_user' : get_current_blog_user(),
+            'is_admin': users.is_current_user_admin(),
+            'role' : 'TBC'
+            }
 
 def get_post_by_link_title(link_title):
     memkey = "POST_%s" %link_title
@@ -268,16 +308,12 @@ def get_post_by_link_title(link_title):
             post = posts[0]
             memcache.add(memkey, post)
     return post
-            
-    
-    return posts[0]
 
 def render_template(path, model):
     return template.render(map_path(path), model)
 
 def map_path(path):
     mapped = os.path.join(os.path.dirname(__file__), path)
-    logging.info(mapped)
     return mapped
 
 def main():

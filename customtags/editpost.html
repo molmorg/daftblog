@@ -1,0 +1,49 @@
+	<form method="post">
+		<script type="text/javascript">
+		 	var regex = /[^A-Za-z0-9_]+/g;
+		 	var title;
+		    var link_title;
+			
+			function generateLinkTitle() {
+			     link_title.val(title.val().replace(regex, '_'));
+			}
+			
+			$(document).ready(function(){
+				title = $('#title');
+				link_title = $('#link_title');
+				title.blur(generateLinkTitle);
+				title.keyup(generateLinkTitle);
+			});
+	    </script>
+	    
+		<p>
+        	Title
+           	<input name="title" type="text" maxlength="100" value="{{post.title}}" id="title" class="wideControl"  />
+        </p>
+	    <p>
+	        Link Title
+	        <input name="link_title" type="text" maxlength="100" id="link_title" class="wideControl" value="{{post.link_title}}" />
+	    </p>
+	    <p >
+	       <input id="enablecomments" type="checkbox" name="enablecomments" {%if post.enable_comments %}checked="checked"{% endif %} />
+	       <label for="enablecomments">Enable Comments?</label>
+	    </p>
+	    <p >
+	        Body 
+		    <textarea name="body" rows="2" cols="20" id="body" class="wideControl" onkeydown="if (document.all &amp;&amp; event.keyCode == 9) {  event.returnValue= false; document.selection.createRange().text = String.fromCharCode(9)}" style="height:267px;">{{post.body}}</textarea>
+	    </p>
+	    <p>    
+			Tags<br />
+			<select size="6" name="selectedtags" id="selectedtags" style="width:50%;" ></select>
+			<br />
+			<input type="submit" name="removetag" value="Remove" id="removetag" />
+		</p>
+		<p>
+			<input name=tag type="text" id="tag" />
+			<input type="submit" name="addtag" value="Add tag" id="addtag" />
+		</p>
+    	<p>
+	        <input type="submit" name="preview" value="Preview"  id="preview" />
+	        <input type="submit" name="submit" value="Submit" id="submit" />
+		</p>
+	</form>

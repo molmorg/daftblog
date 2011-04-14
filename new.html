@@ -1,16 +1,9 @@
-<html>
-	<head>
-		<title>daftblog</title>
-	</head>
-	<body>
-		<form method="post">
-			<h1>Create New Post</h1>
-			Name:<br/>
-			<input type="text" name="title" /><br/>
-			<br/>
-			<input type="text" name="link_title" /><br/>
-			<textarea name="body"></textarea><br/>
-			<input type="submit" name="Submit" value="Submit" />
-		</form>
-	</body>
-</html>
+{% extends 'master.html' %}
+
+{% block crumbs %}
+> New Post
+{% endblock %}
+
+{% block content %}
+		{% edit_post post blog_model %}
+{% endblock %}

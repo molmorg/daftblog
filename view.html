@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-		{% render_post post %}
+		{% render_post post blog_model %}
 		
 	    <p> TODO - next/previous area </p>
 	    {% if blog_model.current_blog_user != None %}

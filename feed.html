@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/">
+	<channel>
+		<title>the Joy of Code</title>
+		<link>http://www.thejoyofcode.com/</link>
+		<description>Find out more at thejoyofcode.com</description>
+		<image>
+			<url>http://www.thejoyofcode.com/App_Themes/BlueParadise/images/logo.gif</url>
+			<title>The Joy Of Code</title>
+			<link>http://www.thejoyofcode.com/</link>
+			<width>88</width>
+			<height>31</height>
+		</image>
+		<language>en-gb</language>
+		<docs>http://blogs.law.harvard.edu/tech/rss</docs>
+		<generator>http://www.thejoyofcode.com/</generator>
+		{% for post in posts %}
+		<item>
+			<title>{{ post.title }}</title>
+			<link>{{base_url}}{{post.link_title}}</link>
+			<description>{{post.body}}</description>
+			<pubDate>{{ post.publish_date|date:"r"}}</pubDate>
+			<dc:date>{{ post.publish_date|date:"c"}}</dc:date>
+			<guid isPermaLink="true">{{ base_url }}{{ post.link_title }}.aspx</guid>
+			<dc:creator>{{ post.user }}</dc:creator>
+			<category>User Interface</category>
+			<slash:comments>{{ post.comment_count }}</slash:comments>
+			<comments>{{ base_url }}{{ post.link_title }}#comments</comments>
+			<wfw:commentRss>{{ base_url }}/Feed/{{ post.link_title }}/Comments</wfw:commentRss>
+		</item>
+		{% endfor %}
+	</channel>
+</rss>

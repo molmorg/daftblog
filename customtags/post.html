@@ -8,7 +8,7 @@
 	<div class="postedBySection">
 		<img src="/uploads/{{ blog_user.image_url}}" alt="{{blog_user.long_name}}" 
 			 style="border-width:0px; float: left; margin-right: 5px;" />
-	    <a href="{{ blog_user.bio_url }}">{{blog_user.display_name}}</a><br />
+	    <a href="{{ blog_user.bio_url }}">{{ blog_user.display_name }}</a><br />
 	    <div>
 	    	<img src="/uploads/twitter.png" style="margin:3px; vertical-align:middle" border="0" alt="Follow me on Twitter" />
 	    	<a href="http://twitter.com/{{ blog_user.twitter_handle }}" style="vertical-align:middle">Follow me</a>
@@ -16,7 +16,7 @@
 	    
 	    <span>{{ post.publish_date }}</span>
 		
-		{% if blog_model.is_admin %}
+		{% if blog_model.current_blog_user != None %}
 		<div style="clear: both; text-align: center">
 	        <p />
 	        <b>Administration:</b>
