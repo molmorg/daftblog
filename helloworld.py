@@ -198,7 +198,7 @@ class UploadFile(webapp.RequestHandler):
         self.response.out.write(render_template('upload.html', {'upload_url' : upload_url}))
         
 class UploadBlob(blobstore_handlers.BlobstoreUploadHandler):
-  #  @reject_no_login
+    @reject_no_login
     def post(self):
         upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
         blob_info = upload_files[0]
@@ -230,6 +230,12 @@ class PostFeed(webapp.RequestHandler):
         posts = get_top_posts()
         self.response.out.write(render_template('feed.html', { 'posts' : posts, 'base_url' : '%s/' %  self.request.host_url  }))
     
+class CommentFeed(webapp.RequestHandler):
+    def get(self, link_title):
+        post = get_post_by_link_title(link_title)
+        comments = Comment.all().filter("post =", post)
+        self.response.out.write(render_template('commentFeed.html', { 'post' : post, 'comments': comments, 'base_url' : '%s/' %  self.request.host_url  }))
+    
 
 application = webapp.WSGIApplication([('/', Home),
                                       ('/new', New),
@@ -238,18 +244,17 @@ application = webapp.WSGIApplication([('/', Home),
                                       ('/([^/]+)/Comments/([^/]+)/delete', DeleteComment),
                                       ('/moderateComment/([^/]+)/(.*)', ModerateComment),
                                       ('/uploads/(.*)', ServeBlob),
-                                      ('/feed', PostFeed),
+                                      ('/Feed/([^/]+)/Comments', CommentFeed),
+                                      ('/Feed', PostFeed),
                                       ('/Edit/([^/]+)', Edit),
                                       ('/([^/]+).aspx', RedirectToView),
                                       ('/([^/]+)', View)],
                                       debug=True)
 
 top_post_count = 20
-top_posts_key = "TOP_POSTS"
 
 def get_top_posts():
 # TODO - remove no cahce
-#    posts = memcache.get(top_posts_key)
     posts = None
     if (posts is None):
         q = Post.all()
@@ -257,7 +262,6 @@ def get_top_posts():
         q.filter('is_published =', True)
         q.order('-publish_date')
         posts = q.fetch(top_post_count)
-        memcache.add(top_posts_key, posts)
     return posts
 
 def get_current_blog_user():

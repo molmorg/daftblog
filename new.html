@@ -1,7 +1,7 @@
 {% extends 'master.html' %}
 
 {% block crumbs %}
-> New Post
+> {% if post == None %}New Post{% else %}Edit: <a href="/{{post.link_title}}">{{post.title}}</a>{% endif %}
 {% endblock %}
 
 {% block content %}
