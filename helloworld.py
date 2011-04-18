@@ -198,7 +198,7 @@ class UploadFile(webapp.RequestHandler):
         self.response.out.write(render_template('upload.html', {'upload_url' : upload_url}))
         
 class UploadBlob(blobstore_handlers.BlobstoreUploadHandler):
-    @reject_no_login
+  #  @reject_no_login
     def post(self):
         upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
         blob_info = upload_files[0]
@@ -286,6 +286,7 @@ def reject_no_login(target):
             return
         else:
             target(*kwargs)
+            
 
 def get_blog_model(self):
 # TODO - need to cache some of these pieces.
