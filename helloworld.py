@@ -15,7 +15,6 @@ from google.appengine.api import users
 from google.appengine.api import urlfetch
 from google.appengine.api import mail
 from google.appengine.api import xmpp
-from google.appengine.api import memcache
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 
@@ -31,6 +30,10 @@ class Post(db.Model):
     publish_date = db.DateTimeProperty(required=True, auto_now_add=True)
     user = db.UserProperty(required=True)
     enable_comments = db.BooleanProperty(required=True, default=True)
+    tags = db.StringListProperty(required=True)
+    
+class Tag(db.Model):
+    name = db.StringProperty(required=True)
     
 class Comment(db.Model):
     post = db.ReferenceProperty(required=True)
@@ -88,7 +91,8 @@ class Home(webapp.RequestHandler):
 class New(webapp.RequestHandler):
     @reject_no_login
     def get(self):
-        self.response.out.write(render_template('new.html', { 'post': None, 'blog_model' : get_blog_model(self) } ))
+        tags = Tag.all()
+        self.response.out.write(render_template('new.html', { 'post': None, 'blog_model' : get_blog_model(self), 'tags':tags} ))
     
     @reject_no_login
     def post(self):
@@ -96,10 +100,9 @@ class New(webapp.RequestHandler):
                     title = self.request.get('title'),
                     link_title = self.request.get('link_title'),
                     body = self.request.get('body'),
-                    user = users.get_current_user())
+                    user = users.get_current_user(),
+                    tags = self.request.get('hidden_tags').rsplit(';'))
         post.put()
-        memcache.delete(top_posts_count)
-        memcache.add("POST_%s" %link_title, post)
         self.redirect('/')
         
 class Edit(webapp.RequestHandler):
@@ -109,9 +112,10 @@ class Edit(webapp.RequestHandler):
         if post == None:
             self.redirect('/' + link_title);
             return
+        tags = Tag.all()
+        self.response.out.write(render_template('new.html', { 'post': post, 'blog_model': get_blog_model(self), 'tags':tags }))
+#TODO - implement POST
         
-        self.response.out.write(render_template('new.html', { 'post': post, 'blog_model': get_blog_model(self) }))
-            
 class View(webapp.RequestHandler):
     def get (self, link_title):
         post = get_post_by_link_title(link_title)
@@ -303,16 +307,10 @@ def get_blog_model(self):
             }
 
 def get_post_by_link_title(link_title):
-    memkey = "POST_%s" %link_title
-    post = memcache.get(memkey)
-    if (post is None):
-        q = Post.all()
-        q.filter('link_title =', link_title)
-        posts = q.fetch(1)
-        if (len(posts) == 1):
-            post = posts[0]
-            memcache.add(memkey, post)
-    return post
+    q = Post.all()
+    q.filter('link_title =', link_title)
+    posts = q.fetch(1)
+    return posts[0]
 
 def render_template(path, model):
     return template.render(map_path(path), model)

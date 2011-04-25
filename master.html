@@ -6,11 +6,10 @@
 		<meta name="description" content="the Joy of Code" />
 		<meta name="keywords" content=".NET development, Web Services, C#, Xml, User Interface, Josh Twist, Thomas Bruusgaard" />
 		<link href="/static/StyleSheet.css" type="text/css" rel="stylesheet" />
+		<link type="text/css" rel="Stylesheet" href="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.5/themes/start/jquery-ui.css" />
 		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="http://feeds.feedburner.com/thejoyofcode/" />
-		<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.5.2.min.js" />
-		<script type="text/javascript" >
-		$(document).ready(function(){});
-		</script>
+		<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.5.2.min.js" ></script>
+		<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.5/jquery-ui.min.js" ></script>
 	</head>
 	<body>
 		<div class="main">
@@ -26,9 +25,9 @@
 	            			 <!-- body -->
 	            			 {% block content %}{% endblock %}
 	                 	</div>
-			    <div class="copyright">
+			    		<div class="copyright">
 	                     	&copy; 2005 - 2011 Josh Twist - All Rights Reserved.
-	                    	</div>
+	                    </div>
 	
 	                 </div>
 	            </div>
@@ -64,10 +63,10 @@
 		                        <b>Editors</b>
 	 							{% if blog_model.current_blog_user != None %}
 		                            <ul>
-		                            	<li><a href="{{ blog_model.logout_url }}">Logout</a></li>
-		                                <li><a href="new">New Post</a></li>
-		                                <li><a href="uploadFile">Upload Files</a></li>
-		                                <li><a href="viewComments">View Comments</a></li>
+		                            	<li><a href="/{{ blog_model.logout_url }}">Logout</a></li>
+		                                <li><a href="/new">New Post</a></li>
+		                                <li><a href="/uploadFile">Upload Files</a></li>
+		                                <li><a href="/viewComments">View Comments</a></li>
 									</ul>
                             	{% else %}
 	                            	<ul>

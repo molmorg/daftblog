@@ -1,4 +1,4 @@
-	<form method="post">
+	<form method="post" id="post_form">
 		<script type="text/javascript">
 		 	var regex = /[^A-Za-z0-9_]+/g;
 		 	var title;
@@ -25,8 +25,8 @@
 	        <input name="link_title" type="text" maxlength="100" id="link_title" class="wideControl" value="{{post.link_title}}" />
 	    </p>
 	    <p >
-	       <input id="enablecomments" type="checkbox" name="enablecomments" {%if post.enable_comments %}checked="checked"{% endif %} />
-	       <label for="enablecomments">Enable Comments?</label>
+	       <input id="enable_comments" type="checkbox" name="enable_comments" {%if post.enable_comments %}checked="checked"{% endif %} />
+	       <label for="enable_comments">Enable Comments?</label>
 	    </p>
 	    <p >
 	        Body 
@@ -34,16 +34,74 @@
 	    </p>
 	    <p>    
 			Tags<br />
-			<select size="6" name="selectedtags" id="selectedtags" style="width:50%;" ></select>
+			<select size="6" name="selected_tags" id="selected_tags" style="width:50%;" >
+			{% for tag in post.tags %}
+				<option>{{ tag }}</option>
+			{% endfor %}
+			</select>
 			<br />
-			<input type="submit" name="removetag" value="Remove" id="removetag" />
+			<input type="button" name="btn_remove_tag" value="Remove" id="btn_remove_tag" />
 		</p>
 		<p>
-			<input name=tag type="text" id="tag" />
-			<input type="submit" name="addtag" value="Add tag" id="addtag" />
+			
+			<input name="hidden_tags" id="hidden_tags" type="hidden" />
+			<input name="tag" type="text" id="tag" />
+			<input type="button" name="add_tag" value="Add tag" id="add_tag" />
 		</p>
     	<p>
-	        <input type="submit" name="preview" value="Preview"  id="preview" />
-	        <input type="submit" name="submit" value="Submit" id="submit" />
+	        <input type="button" name="btn_preview" value="Preview"  id="btn_preview" />
+	        <input type="button" name="btn_submit" value="Submit" id="btn_submit" />
 		</p>
 	</form>
+	<script type="text/javascript">
+		$(function() {
+			var tags = [
+				{% for tag in tags %}
+					"{{tag.name}}",
+				{% endfor %}
+			];
+			
+			$("#tag").autocomplete({
+				source: tags
+			});
+			
+			$("#add_tag").click(function(){
+				var newtag = $("#tag").val();
+				if (newtag == null || newtag.length == 0)
+				{
+					alert('please enter a tag');
+					return;
+				}
+				$("#selected_tags").append(
+						$('<option></option>')
+						.attr("value",newtag)
+						.text(newtag));
+				$("#tag").val("");
+				$("#tag").focus();
+			});
+			
+			$("#btn_remove_tag").click(function(){
+				$("#selected_tags option:selected").remove();
+			});
+			
+			$("#btn_submit").click(function(){
+				if ($("#selected_tags option").length == 0)
+				{
+					alert('You need at least one tag');
+					$("#tag").focus();
+					return;
+				}
+				var tag_string = "";
+				var num = $("#selected_tags option").length;
+				$("#selected_tags option").each(function(i){
+					tag_string += $(this).val() 
+					if (i < num-1)
+					{
+						tag_string += ';';
+					}
+				})
+				$("#hidden_tags").val(tag_string);
+				document.forms["post_form"].submit();
+			})
+		});
+	</script>

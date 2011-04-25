@@ -4,8 +4,8 @@ from google.appengine.ext.webapp import template
 def render_post(post, blog_model):
     return { 'post': post, 'blog_model' : blog_model }
 
-def edit_post(post, blog_model):
-    return { 'post': post, 'blog_model' : blog_model }
+def edit_post(post, blog_model, tags):
+    return { 'post': post, 'blog_model' : blog_model, 'tags' : tags }
 
 def render_comment(comment, post, blog_model):
     return {'comment': comment, 'post': post, 'blog_model': blog_model}
